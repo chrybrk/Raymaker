@@ -3,6 +3,8 @@
 
 #include "Constant.h"
 
+#define AddSceneAuto(CALLER, NAME) AddScene(&sceneManager, InitScene(CALLER, Init##NAME, Terminate##NAME, Update##NAME))
+
 typedef struct {
 	char *sceneName;
 	void (*SceneInit)();
