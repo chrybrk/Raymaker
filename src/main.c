@@ -1,5 +1,8 @@
+#define GAME_SCENE
+
 #include <raylib.h>
 #include "lib/SceneManager.h"
+#include "lib/Animation.h"
 #include "global.h"
 #include "MenuScene.h"
 #include "GameScene.h"

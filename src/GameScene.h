@@ -1,5 +1,4 @@
-#ifndef __GAME_SCENE_H__
-#define __GAME_SCENE_H__
+#ifdef GAME_SCENE
 
 #include <stdio.h>
 #include <raylib.h>
@@ -7,34 +6,46 @@
 #include "lib/Animation.h"
 #include "global.h"
 
-inline Rectangle x;
+Rectangle x, y;
+AnimationTask id;
 
-SI_FUNC void InitGame()
+void InitGame()
 {
 	x = (Rectangle){ 100, 100, 50, 50 };
+	y = (Rectangle){ 100, 300, 50, 50 };
 
-	printf("init\n");
+	id = Animation(2.0f, RecMove, {
+			rec->x += 100.0f * dt;
+			/*
+			Vector2 pos = Vector2Lerp(
+					(Vector2){ rec->x, rec->y },
+					(Vector2){ 200, 200 },
+					duration * .05f
+			);
+
+			rec->x = pos.x;
+			rec->y = pos.y;
+			*/
+	});
 }
 
-SI_FUNC void TerminateGame()
+void TerminateGame()
 {
-	printf("terminate\n");
 }
 
-SI_FUNC void UpdateGame(float dt)
+void UpdateGame(float dt)
 {
 	ClearBackground((Color) { 23, 23, 23 });
 
 	if (IsKeyPressed(KEY_ESCAPE))
 		SetSceneByName(&sceneManager, "Menu");
 
-	AnimateLinearMotion(&x, (Vector2) { 200, 200 }, 1.0f * dt);
-
 	BeginDrawing();
 	{
 		DrawFPS(20, 20);
 
 		DrawRectangleRec(x, RED);
+		DrawRectangleRec(y, YELLOW);
 	}
 	EndDrawing();
 }

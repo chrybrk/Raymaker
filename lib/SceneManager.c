@@ -3,7 +3,7 @@
 #include <string.h>
 #include "SceneManager.h"
 
-Scene InitScene(const char *sceneName, void *SIf, void *STf, void *SUf)
+Scene InitScene(const char *sceneName, void (*SIf)(void), void (*STf)(void), void (*SUf)(float dt))
 {
 	Scene scene = {
 		strdup(sceneName),
@@ -17,11 +17,9 @@ Scene InitScene(const char *sceneName, void *SIf, void *STf, void *SUf)
 
 SceneManager InitSceneManager()
 {
-	SceneManager sceneManager = {
-		{ 0 },
-		0,
-		-1
-	};
+	SceneManager sceneManager;
+	sceneManager.state = 0;
+	sceneManager.currentState = -1;
 
 	return sceneManager;
 }

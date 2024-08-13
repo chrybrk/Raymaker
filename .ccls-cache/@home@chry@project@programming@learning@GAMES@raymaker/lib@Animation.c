@@ -1,9 +1,9 @@
 #include "Animation.h"
-#include "raymath.h"
 
-void AnimateLinearMotion(Rectangle *rec, Vector2 direction, float duration)
+void Animate(AnimationTask *animation, Rectangle *rec, float dt)
 {
-	Vector2 newPosition = Vector2Lerp((Vector2){ rec->x, rec->y }, direction, duration);
-	rec->x = newPosition.x;
-	rec->y = newPosition.y;
+	if (animation->elapsed_time < animation->duration)
+		animation->function(rec, animation->duration, dt);
+
+	animation->elapsed_time += dt;
 }

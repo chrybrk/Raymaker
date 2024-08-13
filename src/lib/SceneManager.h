@@ -12,7 +12,7 @@ typedef struct {
 	void (*SceneUpdate)(float dt);
 } Scene;
 
-Scene InitScene(const char *sceneName, void *SIf, void *STf, void *SUf);
+Scene InitScene(const char *sceneName, void (*SIf)(void), void (*STf)(void), void (*SUf)(float dt));
 
 typedef struct {
 	Scene scenes[MAX_SCENE];

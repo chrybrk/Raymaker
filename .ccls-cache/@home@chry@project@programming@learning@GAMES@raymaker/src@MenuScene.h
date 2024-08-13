@@ -18,7 +18,6 @@ static int keyboardState = 0;
 static bool checkState = true;
 
 static int radius = 0;
-static int timeOutForCirlce = 10;
 static Vector2 positionForCircle;
 static Color startColor;
 

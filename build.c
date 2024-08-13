@@ -1,128 +1,104 @@
-#define VERSION 0.0.1
-#define LIB_PATH "lib/"
-#define SRC_PATH "src/"
-#define BIN_PATH "bin/"
-#define SRC_INCLUDE "src/include"
-#define LIB_NAME "libraymaker"
-#define EXEC_NAME "main"
-
-// ---------------- USER DEFINE ENDS HERE ------------------ //
+#define IMPLEMENT_BUILD_C
 
 #include "build.h"
 
-void handleLib();
-void handleMain();
-void handleAll();
-void handleTest();
+// #define CFLAGS  "-O3", "-Wall", "-Werror", "-Wpedantic", "-Wshadow", "-ggdb"
+#define CFLAGS  "-O3", "-Wall", "-ggdb"
 
-int main()
+bool exec_do_need_to_compile = false;
+
+void build_lib();
+void build_exec();
+void build_test();
+
+int main(int argc, char *argv[])
 {
-	INFO("-------------------------------");
-	INFO("\tSTARTING BUILD\t");
-	INFO("-------------------------------");
+	build_lib();
+	build_exec();
+	build_test();
 
-	handleAll();
-	handleTest();
-
-	INFO("-------------------------------");
-	INFO("\tBUILD COMPLETED\t");
-	INFO("-------------------------------");
+	if (!state_of_rebuilds)
+		INFO("No build requires. Everythings seems to be updated.");
 
 	return 0;
 }
 
-void handleLib()
+void build_lib()
 {
-	int c;
+	int number_of_files;
+	char **collection_of_files = safe(get_files_from_directory("lib/", &number_of_files));
 
-	ACTION("Reading files from directory");
-	char **buffer = safe(getFilesFromDirectory(LIB_PATH, &c));
-	ACTION("Reading completed");
-
-	int cC = c;
-
-	while (c > 0)
+	if (needs_recompilation("bin/lib/libraymaker.a", (const char**)collection_of_files, number_of_files))
 	{
-		c--; char *b = buffer[c]; size_t length = strlen(b);
+		INFO("Building lib.");
+		exec_do_need_to_compile = true;
 
-		ACTION(writef("[completed :: %.0f%%] - Working on `%s`", (float)(100 - ((float)c / cC * 100)), b));
-
-		if (b[length - 1] == 'c')
+		for (int i = 0; i < number_of_files; ++i)
 		{
-			int s = system(writef("cc -c %s%s -I%s -o %s%s%s.o", LIB_PATH, b, LIB_PATH, BIN_PATH, LIB_PATH, b));
+			char *file = collection_of_files[i];
+			size_t len = strlen(file);
 
-			if (s != 0)
-			{
-				ERROR("Failed to build.");
-				exit(EXIT_FAILURE);
-			}
+			ACTION("COMPLETED :: %.1f => Working on `%s`", (float)(((float)(i + 1) / number_of_files * 100)), file);
+
+			const char *buffer[] = { file };
+			switch (file[len - 1]) {
+				case 'h':
+					{
+						if (needs_recompilation(writef("src/%s", file), buffer, 1))
+							CMD("cp", file, "src/lib/");
+
+						break;
+					}
+				case 'c':
+					{
+						if (needs_recompilation(writef("bin/%s.o", file), buffer, 1))
+							CMD("cc", CFLAGS, "-c", file, "-I./lib/", "-o", writef("./bin/%s.o", file));
+
+						break;
+					}
+			};
 		}
-		else if (b[length - 1] == 'h')
-		{
-			int s = system(writef("cp %s%s %s%s", LIB_PATH, b, SRC_PATH, LIB_PATH));
 
-			if (s != 0)
-			{
-				ERROR("Failed to build.");
-				exit(EXIT_FAILURE);
-			}
-		}
-	}
-
-	ACTION("Writing static library");
-	system(writef("ar r %s%s%s.a %s%s*.o", BIN_PATH, LIB_PATH, LIB_NAME, BIN_PATH, LIB_PATH));
-}
-
-void handleMain()
-{
-	ACTION("Working on executable.");
-	int s = system(
-			writef(
-				"cc -I%s -I%s -I%s %s/*.c -L%s%s -L%sraylib/lib/ -l:libraymaker.a -l:libraylib.a -lm -o %s%s%s",
-				SRC_INCLUDE,
-				SRC_PATH,
-				LIB_PATH,
-				SRC_PATH,
-				BIN_PATH,
-				LIB_PATH,
-				LIB_PATH,
-				BIN_PATH,
-				SRC_PATH,
-				EXEC_NAME
-			)
-	);
-
-	if (s != 0)
-	{
-		ERROR("Failed to build.");
-		exit(EXIT_FAILURE);
+		ACTION("Creating `libraymaker.a`.");
+		CMD("ar rc ./bin/lib/libraymaker.a ./bin/lib/*.o");
 	}
 }
 
-void handleAll()
+void build_exec()
 {
-	handleLib();
-	handleMain();
+	int file_count;
+	char **files_of_source = get_files_from_directory("./src/", &file_count);
+
+	if (needs_recompilation("./bin/src/main", (const char**)files_of_source, file_count) || exec_do_need_to_compile)
+	{
+		INFO("Building exec.");
+		CMD(
+				"cc", 
+				"src/*.c",
+				CFLAGS, 
+				"-Isrc/", 
+				"-Isrc/lib/", 
+				"-Isrc/include/", 
+				"-Ilib/",
+				"-Lbin/lib",
+				"-Llib/raylib/lib",
+				"-l:libraymaker.a",
+				"-l:libraylib.a",
+				"-lm",
+				"-o",
+				"bin/src/main"
+		 );
+	}
 }
 
-void handleTest()
+void build_test()
 {
-	ACTION("Working on test executable.");
+	int file_count;
+	char **files_of_source = get_files_from_directory("test/", &file_count);
 
-	int s = system(
-			writef(
-				"cc -I%s %s/*.c -L%sraylib/lib/ -l:libraylib.a -lm -o %s%s",
-				LIB_PATH,
-				"test/",
-				LIB_PATH,
-				BIN_PATH,
-				"test/test"
-			)
-	);
-
-	if (s != 0)
+	if (needs_recompilation("bin/test/test", (const char**)files_of_source, file_count))
 	{
-		ERROR("Failed to build.");
-		exit(EXIT_FAILURE);
+		INFO("Building test.");
+		CMD("cc", "test/*.c", "-Itest/", "-Llib/raylib/lib", "-l:libraylib.a", "-lm", "-o", "bin/test/test");
 	}
 }
